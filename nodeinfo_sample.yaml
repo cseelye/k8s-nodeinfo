@@ -1,0 +1,9 @@
+apiVersion: cseelye.github.io/v1alpha1
+kind: NodeInfo
+metadata:
+  name: localhost
+spec:
+  hostname: microk8s-vm
+  managementIP: "10.1.254.73"
+  cpuCoreCount: 2
+  memoryBytes: 2199023255552
