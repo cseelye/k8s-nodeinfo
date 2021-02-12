@@ -1,7 +1,8 @@
 apiVersion: cseelye.github.io/v1alpha1
 kind: NodeInfo
 metadata:
-  name: localhost
+  name: nodeinfo-localhost
+  namespace: nodeinfo
 spec:
   hostname: microk8s-vm
   managementIP: "10.1.254.73"

@@ -6,7 +6,7 @@ from pprint import pprint
 
 GROUP = "cseelye.github.io"
 VERSION = "v1alpha1"
-NAMESPACE = "default"
+NAMESPACE = "nodeinfo"
 
 def main():
 
@@ -86,7 +86,7 @@ def main():
             except K8sApiException as e:
                 print("Error creating CR: {}".format(e))
         
-        time.sleep(60)
+        time.sleep(20)
 
 if __name__ == '__main__':
     main()

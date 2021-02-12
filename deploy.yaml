@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nodeinfo
+  labels:
+    name: nodeinfo
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nodeinfo
+  namespace: nodeinfo
+  labels:
+    name: nodeinfo
+spec:
+  selector:
+    matchLabels:
+      name: nodeinfo
+  template:
+    metadata:
+      labels:
+        name: nodeinfo
+    spec:
+      volumes:
+      - name: host-hostname
+        hostPath:
+          path: /etc
+          type: Directory
+      - name: host-sys
+        hostPath:
+          path: /sys
+          type: Directory
+      - name: host-proc
+        hostPath:
+          path: /proc
+          type: Directory
+      - name: host-dev
+        hostPath:
+          path: /dev
+          type: Directory
+      containers:
+      - name: nodeinfo
+        image: localhost:32000/nodeinfo:latest
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: host-hostname
+          mountPath: /host/etc
+        - name: host-sys
+          mountPath: /host/sys
+        - name: host-proc
+          mountPath: /host/proc
+        - name: host-dev
+          mountPath: /host/dev
