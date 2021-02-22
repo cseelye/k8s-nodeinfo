@@ -22,7 +22,7 @@ spec:
         name: nodeinfo
     spec:
       volumes:
-      - name: host-hostname
+      - name: host-etc
         hostPath:
           path: /etc
           type: Directory
@@ -44,7 +44,7 @@ spec:
         securityContext:
           privileged: true
         volumeMounts:
-        - name: host-hostname
+        - name: host-etc
           mountPath: /host/etc
         - name: host-sys
           mountPath: /host/sys
@@ -52,3 +52,8 @@ spec:
           mountPath: /host/proc
         - name: host-dev
           mountPath: /host/dev
+        env:
+          - name: HOST_NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName

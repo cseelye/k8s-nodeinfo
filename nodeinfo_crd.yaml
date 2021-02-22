@@ -1,6 +1,11 @@
+
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
   name: nodeinfos.cseelye.github.io
 spec:
   group: cseelye.github.io
@@ -14,24 +19,109 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        type: object
+        description: NodeInfo is the Schema for the nodeinfoes API
         properties:
           apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           spec:
+            description: NodeInfoSpec defines the desired state of NodeInfo
             type: object
+          status:
+            description: NodeInfoStatus defines the observed state of NodeInfo
             properties:
+              cpuCount:
+                format: int64
+                type: integer
+              drives:
+                items:
+                  description: NodeInfoDrive defines a discovered drive within the
+                    node
+                  properties:
+                    model:
+                      type: string
+                    name:
+                      type: string
+                    rotational:
+                      type: boolean
+                    serial:
+                      type: string
+                    sizeBytes:
+                      format: int64
+                      type: integer
+                    vendor:
+                      type: string
+                  required:
+                  - model
+                  - name
+                  - rotational
+                  - serial
+                  - sizeBytes
+                  - vendor
+                  type: object
+                type: array
               hostname:
                 type: string
+              isVirtual:
+                type: boolean
               managementIP:
                 type: string
-              cpuCoreCount:
-                type: integer
               memoryBytes:
+                format: int64
                 type: integer
+              nics:
+                items:
+                  description: NodeInfoNic defines a discovered network interface
+                    within the node
+                  properties:
+                    ipAddresses:
+                      items:
+                        type: string
+                      type: array
+                    mtu:
+                      format: int64
+                      type: integer
+                    name:
+                      type: string
+                    speedMb:
+                      format: int64
+                      type: integer
+                    type:
+                      type: string
+                  required:
+                  - ipAddresses
+                  - mtu
+                  - name
+                  - speedMb
+                  - type
+                  type: object
+                type: array
+            required:
+            - cpuCount
+            - drives
+            - hostname
+            - isVirtual
+            - managementIP
+            - memoryBytes
+            - nics
+            type: object
+        type: object
     served: true
     storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
