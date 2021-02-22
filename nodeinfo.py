@@ -31,7 +31,7 @@ def check_required():
     if not allgood:
         exit(1)
 
-def get_or_create_nodeinfo(cr_api, hostname):
+def get_or_create_nodeinfo():
     # Look for an existing CR for this node
     try:
         nodeinfo_current =  cr_api.get_namespaced_custom_object(
@@ -68,7 +68,7 @@ def get_or_create_nodeinfo(cr_api, hostname):
     print("Successfully created NodeInfo CR for {}".format(hostname))
     return nodeinfo_current
 
-def update_nodeinfo_status(cr_api, hostname, nodeinfo_current):
+def update_nodeinfo_status(nodeinfo_current):
     print("Updating NodeInfo CR status for {}".format(hostname))
     ret = cr_api.replace_namespaced_custom_object_status(
             group=GROUP,
@@ -90,7 +90,7 @@ def discover_status():
     # Just hardcoded for the moment
 
     return {
-            "hostname": os.environ.get("HOST_NODE_NAME", "unknown"),
+            "hostname": hostname,
             "managementIP": "1.1.1.1",
             "isVirtual": True,
             "cpuCount": 16,
@@ -145,6 +145,23 @@ def discover_status():
 
 def main():
 
+    # Get or create the NodeInfo CR for this host
+    try:
+        nodeinfo_current = get_or_create_nodeinfo()
+    except K8sApiException as e:
+        print("Error querying NodeInfo CR for {}: {}".format(hostname, e))
+        return
+
+    # Update the CR status with the discovered information from the host
+    nodeinfo_current["status"] = discover_status()
+    try:
+        nodeinfo_updated = update_nodeinfo_status(nodeinfo_current)
+        print(json.dumps(nodeinfo_updated, indent=2, sort_keys=True))
+    except K8sApiException as e:
+        print("Error updating CR status for {}: {}".format(hostname, e))
+        return
+
+if __name__ == '__main__':
     # Check that this container was launched with the required env and volumes
     check_required()
 
@@ -162,26 +179,8 @@ def main():
             exit(1)
     cr_api = client.CustomObjectsApi()
 
-    # The name of this NodeInfo instance is the host node name
     hostname = os.environ.get("HOST_NODE_NAME", "unknown")
 
-    # Get or create the NodeInfo CR for this host
-    try:
-        nodeinfo_current = get_or_create_nodeinfo(cr_api, hostname)
-    except K8sApiException as e:
-        print("Error querying NodeInfo CR for {}: {}".format(hostname, e))
-        return
-
-    # Update the CR status with the discovered information from the host
-    nodeinfo_current["status"] = discover_status()
-    try:
-        nodeinfo_updated = update_nodeinfo_status(cr_api, hostname, nodeinfo_current)
-        print(json.dumps(nodeinfo_updated, indent=2, sort_keys=True))
-    except K8sApiException as e:
-        print("Error updating CR status for {}: {}".format(hostname, e))
-        return
-
-if __name__ == '__main__':
     while True:
         try:
             main()
