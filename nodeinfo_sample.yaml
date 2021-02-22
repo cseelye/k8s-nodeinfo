@@ -1,10 +1,32 @@
 apiVersion: cseelye.github.io/v1alpha1
 kind: NodeInfo
 metadata:
-  name: nodeinfo-localhost
+  name: microk8s-vm
   namespace: nodeinfo
-spec:
+spec: {}
+status:
+cpuCount: 16
+  drives:
+  - model: Virtual disk
+    name: sdc
+    rotational: true
+    serial: 6000c290ecb3294723e7095e4a5c605f
+    sizeBytes: 107374182400
+    vendor: VMware
+  - model: Virtual disk
+    name: sdd
+    rotational: true
+    serial: 6000c295212e50f29a0d1d0ea427bcc0
+    sizeBytes: 107374182400
+    vendor: VMware
   hostname: microk8s-vm
-  managementIP: "10.1.254.73"
-  cpuCoreCount: 2
-  memoryBytes: 2199023255552
+  isVirtual: true
+  managementIP: 1.1.1.1
+  memoryBytes: 68719476736
+  nics:
+  - ipAddresses:
+    - 1.1.1.1/24
+    mtu: 1500
+    name: ens192
+    speedMb: 10000
+    type: ether
