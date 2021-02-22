@@ -31,21 +31,7 @@ def check_required():
     if not allgood:
         exit(1)
 
-def load_config():
-    # First try in-cluster (we are running in a pod in k8s),
-    # then try local config file (we are running as a local script)
-    try:
-        config.load_incluster_config()
-        print("Loaded in-cluster config")
-    except config.config_exception.ConfigException:
-        try:
-            config.load_kube_config()
-            print("Loaded local kube config")
-        except config.config_exception.ConfigException:
-            print("Could not load in-cluster or local configuration")
-            exit(1)
-
-def get_or_create_nodeinfo(hostname):
+def get_or_create_nodeinfo(cr_api, hostname):
     # Look for an existing CR for this node
     try:
         nodeinfo_current =  cr_api.get_namespaced_custom_object(
@@ -59,7 +45,7 @@ def get_or_create_nodeinfo(hostname):
     except K8sApiException as e:
         if e.status == 404:
             # CR was not found. This means it has not been created yet
-            return None
+            pass
         else:
             raise
 
@@ -82,19 +68,19 @@ def get_or_create_nodeinfo(hostname):
     print("Successfully created NodeInfo CR for {}".format(hostname))
     return nodeinfo_current
 
-def update_nodeinfo_status(hostname, nodeinfo_current):
-        print("Updating NodeInfo CR status for {}".format(hostname))
-        ret = cr_api.replace_namespaced_custom_object_status(
-                group=GROUP,
-                version=VERSION,
-                namespace=NAMESPACE,
-                plural=PLURAL,
-                field_manager=FIELD_MANAGER,
-                name=hostname,
-                body=nodeinfo_current
-        )
-        print("Successfully updated NodeInfo CR status for {}".format(hostname))
-        return ret
+def update_nodeinfo_status(cr_api, hostname, nodeinfo_current):
+    print("Updating NodeInfo CR status for {}".format(hostname))
+    ret = cr_api.replace_namespaced_custom_object_status(
+            group=GROUP,
+            version=VERSION,
+            namespace=NAMESPACE,
+            plural=PLURAL,
+            field_manager=FIELD_MANAGER,
+            name=hostname,
+            body=nodeinfo_current
+    )
+    print("Successfully updated NodeInfo CR status for {}".format(hostname))
+    return ret
 
 def discover_status():
     # Discover info about the host system
@@ -104,7 +90,7 @@ def discover_status():
     # Just hardcoded for the moment
 
     return {
-            "hostname": hostname,
+            "hostname": os.environ.get("HOST_NODE_NAME", "unknown"),
             "managementIP": "1.1.1.1",
             "isVirtual": True,
             "cpuCount": 16,
@@ -162,9 +148,18 @@ def main():
     # Check that this container was launched with the required env and volumes
     check_required()
 
-    # Load configuration to connect to k8s API. 
-    load_config()
-
+    # First try in-cluster (we are running in a pod in k8s),
+    # then try local config file (we are running as a local script)
+    try:
+        config.load_incluster_config()
+        print("Loaded in-cluster config")
+    except config.config_exception.ConfigException:
+        try:
+            config.load_kube_config()
+            print("Loaded local kube config")
+        except config.config_exception.ConfigException:
+            print("Could not load in-cluster or local configuration")
+            exit(1)
     cr_api = client.CustomObjectsApi()
 
     # The name of this NodeInfo instance is the host node name
@@ -172,7 +167,7 @@ def main():
 
     # Get or create the NodeInfo CR for this host
     try:
-        nodeinfo_current = get_or_create_nodeinfo(hostname)
+        nodeinfo_current = get_or_create_nodeinfo(cr_api, hostname)
     except K8sApiException as e:
         print("Error querying NodeInfo CR for {}: {}".format(hostname, e))
         return
@@ -180,7 +175,7 @@ def main():
     # Update the CR status with the discovered information from the host
     nodeinfo_current["status"] = discover_status()
     try:
-        nodeinfo_updated = update_nodeinfo_status(hostname, nodeinfo_current)
+        nodeinfo_updated = update_nodeinfo_status(cr_api, hostname, nodeinfo_current)
         print(json.dumps(nodeinfo_updated, indent=2, sort_keys=True))
     except K8sApiException as e:
         print("Error updating CR status for {}: {}".format(hostname, e))
